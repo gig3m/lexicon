@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Command } from "cmdk";
+import { DialogTitle } from "@radix-ui/react-dialog";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { Word } from "@/lib/types";
@@ -63,6 +64,7 @@ export default function CommandPalette() {
       label="Search your lexicon"
       className="fixed inset-0 z-50"
     >
+      <DialogTitle className="sr-only">Search your lexicon</DialogTitle>
       <div
         className="fixed inset-0 bg-ink/40 backdrop-blur-sm"
         onClick={() => setOpen(false)}
