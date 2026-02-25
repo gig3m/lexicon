@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-// Use service-level client for API routes
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
+import { createServiceClient } from "@/lib/supabase-server";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET() {
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("words")
     .select("*")
@@ -23,6 +16,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   const body = await req.json();
   const { word, definition, part_of_speech, pronunciation, source, notes } = body;
 
@@ -30,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Word and definition required" }, { status: 400 });
   }
 
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("words")
     .insert({
@@ -51,6 +47,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   const body = await req.json();
   const { id, ...updates } = body;
 
@@ -58,7 +57,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "ID required" }, { status: 400 });
   }
 
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("words")
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -73,13 +72,16 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const authError = requireAuth(req);
+  if (authError) return authError;
+
   const id = req.nextUrl.searchParams.get("id");
 
   if (!id) {
     return NextResponse.json({ error: "ID required" }, { status: 400 });
   }
 
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   const { error } = await supabase.from("words").delete().eq("id", id);
 
   if (error) {

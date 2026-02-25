@@ -11,6 +11,7 @@ export default function IndexPage() {
   const [filtered, setFiltered] = useState<Word[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchWords() {
@@ -19,7 +20,9 @@ export default function IndexPage() {
         .select("*")
         .order("word", { ascending: true });
 
-      if (!error && data) {
+      if (error) {
+        setFetchError(error.message);
+      } else if (data) {
         setWords(data);
         setFiltered(data);
       }
@@ -59,6 +62,11 @@ export default function IndexPage() {
 
   return (
     <div>
+      {fetchError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          Failed to load words: {fetchError}
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="font-serif text-4xl mb-2">Word Index</h1>
         <p className="text-muted">

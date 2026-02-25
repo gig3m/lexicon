@@ -9,30 +9,19 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Check if already authenticated via cookie
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("admin_token="))
-      ?.split("=")[1];
-
-    if (token) {
-      verifyToken(token);
-    } else {
+    async function checkSession() {
+      try {
+        const res = await fetch("/api/auth");
+        if (res.ok) {
+          setAuthenticated(true);
+        }
+      } catch {
+        // not authenticated
+      }
       setChecking(false);
     }
+    checkSession();
   }, []);
-
-  async function verifyToken(token: string) {
-    const res = await fetch("/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
-    if (res.ok) {
-      setAuthenticated(true);
-    }
-    setChecking(false);
-  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -45,9 +34,6 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
     });
 
     if (res.ok) {
-      const { token } = await res.json();
-      // Set cookie for 7 days
-      document.cookie = `admin_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
       setAuthenticated(true);
     } else {
       setError("Incorrect password.");

@@ -8,15 +8,28 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ word: "", definition: "", part_of_speech: "", pronunciation: "", notes: "" });
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWords();
   }, []);
 
   async function fetchWords() {
-    const res = await fetch("/api/words");
-    const data = await res.json();
-    setWords(data);
+    setFetchError(null);
+    try {
+      const res = await fetch("/api/words");
+      if (!res.ok) {
+        const err = await res.json();
+        setFetchError(err.error || "Failed to load words");
+        setLoading(false);
+        return;
+      }
+      const data = await res.json();
+      setWords(data);
+    } catch {
+      setFetchError("Failed to connect to server");
+    }
     setLoading(false);
   }
 
@@ -32,19 +45,39 @@ export default function AdminPage() {
   }
 
   async function saveEdit(id: string) {
-    await fetch("/api/words", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...editForm }),
-    });
-    setEditing(null);
-    fetchWords();
+    setActionError(null);
+    try {
+      const res = await fetch("/api/words", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...editForm }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setActionError(err.error || "Failed to save changes");
+        return;
+      }
+      setEditing(null);
+      fetchWords();
+    } catch {
+      setActionError("Failed to connect to server");
+    }
   }
 
   async function deleteWord(id: string) {
     if (!confirm("Delete this word?")) return;
-    await fetch(`/api/words?id=${id}`, { method: "DELETE" });
-    fetchWords();
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/words?id=${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        setActionError(err.error || "Failed to delete word");
+        return;
+      }
+      fetchWords();
+    } catch {
+      setActionError("Failed to connect to server");
+    }
   }
 
   if (loading) {
@@ -53,6 +86,19 @@ export default function AdminPage() {
 
   return (
     <div>
+      {fetchError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {fetchError}
+        </div>
+      )}
+      {actionError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center justify-between">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="text-red-500 hover:text-red-700 ml-4 text-xs font-medium">
+            Dismiss
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-serif text-3xl">Manage Lexicon</h1>
