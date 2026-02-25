@@ -12,6 +12,7 @@ export default function CreateWordPage() {
   const [saved, setSaved] = useState(false);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
+  const [selected, setSelected] = useState<Record<number, Set<number>>>({});
 
   async function lookupWord(word?: string) {
     const searchWord = word || query;
@@ -22,6 +23,7 @@ export default function CreateWordPage() {
     setSuggestions([]);
     setError("");
     setSaved(false);
+    setSelected({});
 
     try {
       const res = await fetch(`/api/dictionary?word=${encodeURIComponent(searchWord.trim())}`);
@@ -40,33 +42,67 @@ export default function CreateWordPage() {
     }
   }
 
-  async function addWord(def: MWDefinition, definitionText: string) {
+  function toggleDef(entryIdx: number, defIdx: number) {
+    setSelected((prev) => {
+      const next = { ...prev };
+      const set = new Set(next[entryIdx] || []);
+      if (set.has(defIdx)) {
+        set.delete(defIdx);
+      } else {
+        set.add(defIdx);
+      }
+      if (set.size === 0) {
+        delete next[entryIdx];
+      } else {
+        next[entryIdx] = set;
+      }
+      return next;
+    });
+  }
+
+  const selectedCount = Object.values(selected).reduce((sum, s) => sum + s.size, 0);
+
+  async function addSelected() {
     setSaving(true);
     setError("");
 
     try {
-      const res = await fetch("/api/words", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          word: def.word,
-          definition: definitionText,
-          part_of_speech: def.partOfSpeech,
-          pronunciation: def.pronunciation || null,
-          source: "merriam-webster",
-          notes: notes.trim() || null,
-        }),
-      });
+      for (const [entryIdxStr, defIndices] of Object.entries(selected)) {
+        const entry = results[Number(entryIdxStr)];
+        const defs = Array.from(defIndices)
+          .sort((a, b) => a - b)
+          .map((idx) => entry.definitions[idx]);
+        const definition =
+          defs.length === 1
+            ? defs[0]
+            : defs.map((d, i) => `${i + 1}. ${d}`).join("\n");
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Failed to save.");
-      } else {
-        setSaved(true);
-        setQuery("");
-        setResults([]);
-        setNotes("");
+        const res = await fetch("/api/words", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            word: entry.word,
+            definition,
+            part_of_speech: entry.partOfSpeech,
+            pronunciation: entry.pronunciation || null,
+            source: "merriam-webster",
+            notes: notes.trim() || null,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error || "Failed to save.");
+          setSaving(false);
+          return;
+        }
       }
+
+      setSaved(true);
+      setQuery("");
+      setResults([]);
+      setNotes("");
+      setSelected({});
     } catch {
       setError("Failed to save word.");
     } finally {
@@ -176,26 +212,37 @@ export default function CreateWordPage() {
           )}
           <div className="space-y-2">
             {entry.definitions.map((def, j) => (
-              <div
+              <label
                 key={j}
-                className="flex items-start justify-between gap-4 p-3 rounded border border-transparent hover:border-accent/20 hover:bg-surface-hover transition-all"
+                className="flex items-start gap-3 p-3 rounded border border-transparent hover:border-accent/20 hover:bg-surface-hover transition-all cursor-pointer"
               >
+                <input
+                  type="checkbox"
+                  checked={selected[i]?.has(j) ?? false}
+                  onChange={() => toggleDef(i, j)}
+                  className="mt-1 accent-accent"
+                />
                 <p className="text-ink/80 flex-1">
                   <span className="text-muted text-xs mr-2">{j + 1}.</span>
                   {def}
                 </p>
-                <button
-                  onClick={() => addWord(entry, def)}
-                  disabled={saving}
-                  className="shrink-0 px-4 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-light transition-colors disabled:opacity-50"
-                >
-                  {saving ? "Adding…" : "Add"}
-                </button>
-              </div>
+              </label>
             ))}
           </div>
         </div>
       ))}
+
+      {selectedCount > 0 && (
+        <div className="sticky bottom-6 flex justify-center">
+          <button
+            onClick={addSelected}
+            disabled={saving}
+            className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-light transition-colors font-medium shadow-lg disabled:opacity-50"
+          >
+            {saving ? "Adding…" : `Add Selected (${selectedCount})`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

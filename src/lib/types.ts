@@ -6,6 +6,7 @@ export type Word = {
   pronunciation: string | null;
   source: string;
   notes: string | null;
+  content: string | null;
   created_at: string;
   updated_at: string;
 };

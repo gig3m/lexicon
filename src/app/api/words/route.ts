@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (authError) return authError;
 
   const body = await req.json();
-  const { word, definition, part_of_speech, pronunciation, source, notes } = body;
+  const { word, definition, part_of_speech, pronunciation, source, notes, content } = body;
 
   if (!word || !definition) {
     return NextResponse.json({ error: "Word and definition required" }, { status: 400 });
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       pronunciation: pronunciation || null,
       source: source || "merriam-webster",
       notes: notes?.trim() || null,
+      content: content?.trim() || null,
     })
     .select()
     .single();

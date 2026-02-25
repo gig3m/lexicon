@@ -1,10 +1,15 @@
+import Link from "next/link";
 import type { Word } from "@/lib/types";
 
 export default function WordCard({ word }: { word: Word }) {
   return (
     <div className="bg-surface rounded-lg border border-border p-5 hover:border-accent/30 transition-colors">
       <div className="flex items-baseline gap-3 mb-1">
-        <h3 className="font-serif text-xl font-semibold">{word.word}</h3>
+        <Link href={`/word/${encodeURIComponent(word.word)}`}>
+          <h3 className="font-serif text-xl font-semibold hover:text-accent transition-colors">
+            {word.word}
+          </h3>
+        </Link>
         {word.part_of_speech && (
           <span className="text-xs italic text-muted">{word.part_of_speech}</span>
         )}

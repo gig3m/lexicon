@@ -7,7 +7,7 @@ export default function AdminPage() {
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ word: "", definition: "", part_of_speech: "", pronunciation: "", notes: "" });
+  const [editForm, setEditForm] = useState({ word: "", definition: "", part_of_speech: "", pronunciation: "", notes: "", content: "" });
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -41,6 +41,7 @@ export default function AdminPage() {
       part_of_speech: word.part_of_speech || "",
       pronunciation: word.pronunciation || "",
       notes: word.notes || "",
+      content: word.content || "",
     });
   }
 
@@ -158,6 +159,13 @@ export default function AdminPage() {
                     className="w-full px-3 py-2 border border-border rounded bg-parchment text-sm"
                     rows={2}
                     placeholder="Personal notes"
+                  />
+                  <textarea
+                    value={editForm.content}
+                    onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                    className="w-full px-3 py-2 border border-border rounded bg-parchment text-sm font-mono"
+                    rows={6}
+                    placeholder="Markdown content (optional)"
                   />
                   <div className="flex gap-2">
                     <button
