@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import CommandPalette from "@/components/CommandPalette";
 
 export const metadata: Metadata = {
   title: "Lexicon — Personal Word Collection",
@@ -22,9 +23,13 @@ export default function RootLayout({
             <nav className="flex gap-6 text-sm text-muted">
               <a href="/" className="hover:text-ink transition-colors">Index</a>
               <a href="/admin" className="hover:text-ink transition-colors">Admin</a>
+              <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs text-muted border border-border rounded bg-parchment">
+                ⌘K
+              </kbd>
             </nav>
           </div>
         </header>
+        <CommandPalette />
         <main className="max-w-4xl mx-auto px-6 py-10">
           {children}
         </main>
