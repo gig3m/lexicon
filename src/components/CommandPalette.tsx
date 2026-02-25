@@ -27,15 +27,25 @@ export default function CommandPalette() {
   // Fetch words on first open
   useEffect(() => {
     if (!open || loaded) return;
+
+    let mounted = true;
+
     async function fetchWords() {
       const { data } = await supabase
         .from("words")
         .select("*")
         .order("word", { ascending: true });
-      if (data) setWords(data);
-      setLoaded(true);
+      if (!mounted) return;
+      if (data) {
+        setWords(data);
+        setLoaded(true);
+      }
     }
     fetchWords();
+
+    return () => {
+      mounted = false;
+    };
   }, [open, loaded]);
 
   const selectWord = useCallback(
@@ -60,7 +70,7 @@ export default function CommandPalette() {
       <div className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-lg bg-surface border border-border rounded-xl shadow-2xl overflow-hidden">
         <Command.Input
           placeholder="Search your lexicon…"
-          className="w-full px-4 py-3 border-b border-border bg-surface text-ink placeholder:text-muted/60 focus:outline-none text-base"
+          className="w-full px-4 py-3 border-b border-border bg-surface text-ink placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-accent/30 text-base"
         />
         <Command.List className="max-h-72 overflow-y-auto p-2">
           <Command.Empty className="px-4 py-8 text-center text-muted text-sm">
