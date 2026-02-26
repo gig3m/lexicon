@@ -53,7 +53,7 @@ Return ONLY valid JSON. No markdown fences, no explanation outside the JSON.`,
     const wLower = w.toLowerCase();
     const wEncoded = encodeURIComponent(w);
     const sources = [
-      `- [Logos Factbook](https://ref.ly/logos4/Factbook?id=ref%3abk.%25${wLower}&lens=all)`,
+      `- [Logos Factbook](https://ref.ly/logos4/Factbook?id=ref%3abk.%25${wEncoded}&lens=all)`,
       `- [Anchor Yale Bible Dictionary](https://ref.ly/logosres/anch?hw=${wEncoded})`,
       `- [Lexham Bible Dictionary](https://ref.ly/logosres/lbd?hw=${wEncoded})`,
     ].join("\n");
