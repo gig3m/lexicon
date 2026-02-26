@@ -29,6 +29,7 @@ Defined in `.env.local` (see `.env.local.example`):
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-only, bypasses RLS) |
 | `MW_API_KEY` | Merriam-Webster API key (server-only) |
+| `ANTHROPIC_API_KEY` | Anthropic API key for AI word lookups (server-only) |
 | `ADMIN_PASSWORD` | Password for admin gate (server-only) |
 
 ## Architecture
