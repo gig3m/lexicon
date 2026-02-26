@@ -49,12 +49,13 @@ Return ONLY valid JSON. No markdown fences, no explanation outside the JSON.`,
     const parsed = JSON.parse(text);
 
     // Append programmatic source links
-    const encoded = encodeURIComponent(parsed.word || word);
+    const w = parsed.word || word;
+    const wLower = w.toLowerCase();
+    const wEncoded = encodeURIComponent(w);
     const sources = [
-      `- [Merriam-Webster](https://www.merriam-webster.com/dictionary/${encoded})`,
-      `- [Etymology Online](https://www.etymonline.com/word/${encoded})`,
-      `- [Wikipedia](https://en.wikipedia.org/wiki/${encoded})`,
-      `- [Wiktionary](https://en.wiktionary.org/wiki/${encoded})`,
+      `- [Logos Factbook](https://ref.ly/logos4/Factbook?id=ref%3abk.%25${wLower}&lens=all)`,
+      `- [Anchor Yale Bible Dictionary](https://ref.ly/logosres/anch?hw=${wEncoded})`,
+      `- [Lexham Bible Dictionary](https://ref.ly/logosres/lbd?hw=${wEncoded})`,
     ].join("\n");
 
     const content = parsed.content
