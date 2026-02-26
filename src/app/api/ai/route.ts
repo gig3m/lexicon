@@ -25,21 +25,10 @@ export async function GET(req: NextRequest) {
       system: `You are a concise, knowledgeable lexicographer. When given a word, return a JSON object with exactly these fields:
 
 - "word": the word as a string
-- "definition": a clear, concise definition (1-2 sentences)
+- "definition": a clear, concise definition (1-2 sentences, bolded in the style of a dictionary entry)
 - "part_of_speech": the primary part of speech (e.g. "noun", "verb", "adjective")
 - "pronunciation": the pronunciation key (e.g. "ih-FEM-er-ul")
-- "content": a markdown string with these sections:
-  ## Etymology
-  Brief origin of the word (2-3 sentences)
-
-  ## Examples
-  2-3 example sentences using the word naturally
-
-  ## Usage Notes
-  When and how this word is typically used, register, any common confusions (2-3 sentences)
-
-  ## Related Words
-  3-5 related words or synonyms, each with a brief note on how it differs
+- "content": a markdown string containing a flowing explanation of the word. Do NOT use section headers. Instead, weave together the word's etymology (including original language roots in italics), how and when it is used, what distinguishes it from related terms, and natural example usage — all in connected prose paragraphs. Write in a clear, authoritative but accessible style. Aim for 2-4 paragraphs. Think of this as the explanatory essay a well-read friend would write, not a rigid dictionary entry.
 
 Return ONLY valid JSON. No markdown fences, no explanation outside the JSON.`,
       messages: [
@@ -53,12 +42,25 @@ Return ONLY valid JSON. No markdown fences, no explanation outside the JSON.`,
     const text = message.content[0].type === "text" ? message.content[0].text : "";
     const parsed = JSON.parse(text);
 
+    // Append programmatic source links
+    const encoded = encodeURIComponent(parsed.word || word);
+    const sources = [
+      `- [Merriam-Webster](https://www.merriam-webster.com/dictionary/${encoded})`,
+      `- [Etymology Online](https://www.etymonline.com/word/${encoded})`,
+      `- [Wikipedia](https://en.wikipedia.org/wiki/${encoded})`,
+      `- [Wiktionary](https://en.wiktionary.org/wiki/${encoded})`,
+    ].join("\n");
+
+    const content = parsed.content
+      ? `${parsed.content}\n\n## Sources\n\n${sources}`
+      : "";
+
     return NextResponse.json({
       word: parsed.word || word,
       definition: parsed.definition || "",
       part_of_speech: parsed.part_of_speech || "",
       pronunciation: parsed.pronunciation || null,
-      content: parsed.content || "",
+      content,
     });
   } catch (err) {
     const errorMessage = err instanceof SyntaxError
