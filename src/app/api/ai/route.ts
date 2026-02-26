@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       system: `You are a concise, knowledgeable lexicographer. When given a word, return a JSON object with exactly these fields:
 
 - "word": the word as a string
-- "definition": a clear, concise definition (1-2 sentences, bolded in the style of a dictionary entry)
+- "definition": a clear, concise definition (1-2 sentences, plain text only — no markdown formatting)
 - "part_of_speech": the primary part of speech (e.g. "noun", "verb", "adjective")
 - "pronunciation": the pronunciation key (e.g. "ih-FEM-er-ul")
 - "content": a markdown string with two sections:
@@ -33,6 +33,8 @@ export async function GET(req: NextRequest) {
   First, a flowing explanation with NO header. Weave together the word's etymology (including original language roots in italics), how and when it is used, what distinguishes it from related terms, and natural example usage — all in connected prose paragraphs. Write in a clear, authoritative but accessible style. Aim for 2-4 paragraphs. Think of this as the explanatory essay a well-read friend would write, not a rigid dictionary entry.
 
   Then, a "## Related Terms" section with a bullet list of 3-6 related words or concepts.
+
+IMPORTANT: Only the "content" field should contain markdown. All other fields (word, definition, part_of_speech, pronunciation) must be plain text with no markdown formatting whatsoever.
 
 Return ONLY valid JSON. No markdown fences, no explanation outside the JSON.`,
       messages: [
