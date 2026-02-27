@@ -91,7 +91,7 @@ export default function IndexPage() {
         <div className="space-y-10">
           {letters.map((letter) => (
             <section key={letter}>
-              <h2 id={`letter-${letter}`} className="font-serif text-3xl text-accent border-b border-border pb-2 mb-4 scroll-mt-28">
+              <h2 id={`letter-${letter}`} className="font-serif text-3xl text-accent border-b border-border pb-2 mb-4 scroll-mt-32">
                 {letter}
               </h2>
               <div className="space-y-4">

@@ -135,7 +135,7 @@ export default function AdminPage() {
             <div className="space-y-8">
               {sortedLetters.map((letter) => (
                 <section key={letter}>
-                  <h2 id={`letter-${letter}`} className="font-serif text-2xl text-accent border-b border-border pb-2 mb-3 scroll-mt-28">
+                  <h2 id={`letter-${letter}`} className="font-serif text-2xl text-accent border-b border-border pb-2 mb-3 scroll-mt-32">
                     {letter}
                   </h2>
                   <div className="space-y-3">
