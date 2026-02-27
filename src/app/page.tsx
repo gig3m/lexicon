@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import type { Word } from "@/lib/types";
 import WordCard from "@/components/WordCard";
 import SearchBar from "@/components/SearchBar";
+import AlphabetBar from "@/components/AlphabetBar";
 
 export default function IndexPage() {
   const [words, setWords] = useState<Word[]>([]);
@@ -76,6 +77,10 @@ export default function IndexPage() {
 
       <SearchBar value={search} onChange={setSearch} />
 
+      {letters.length > 0 && (
+        <AlphabetBar activeLetters={new Set(letters)} />
+      )}
+
       {letters.length === 0 ? (
         <p className="text-muted text-center py-12">
           {words.length === 0
@@ -86,7 +91,7 @@ export default function IndexPage() {
         <div className="space-y-10">
           {letters.map((letter) => (
             <section key={letter}>
-              <h2 className="font-serif text-3xl text-accent border-b border-border pb-2 mb-4">
+              <h2 id={`letter-${letter}`} className="font-serif text-3xl text-accent border-b border-border pb-2 mb-4 scroll-mt-14">
                 {letter}
               </h2>
               <div className="space-y-4">

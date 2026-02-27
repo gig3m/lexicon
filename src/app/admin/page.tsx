@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Word } from "@/lib/types";
+import AlphabetBar from "@/components/AlphabetBar";
 
 export default function AdminPage() {
   const [words, setWords] = useState<Word[]>([]);
@@ -120,9 +121,25 @@ export default function AdminPage() {
             Add your first word →
           </a>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {words.map((word) => (
+      ) : (() => {
+        const grouped = words.reduce<Record<string, Word[]>>((acc, w) => {
+          const letter = w.word[0]?.toUpperCase() || "#";
+          if (!acc[letter]) acc[letter] = [];
+          acc[letter].push(w);
+          return acc;
+        }, {});
+        const sortedLetters = Object.keys(grouped).sort();
+        return (
+          <>
+            <AlphabetBar activeLetters={new Set(sortedLetters)} />
+            <div className="space-y-8">
+              {sortedLetters.map((letter) => (
+                <section key={letter}>
+                  <h2 id={`letter-${letter}`} className="font-serif text-2xl text-accent border-b border-border pb-2 mb-3 scroll-mt-14">
+                    {letter}
+                  </h2>
+                  <div className="space-y-3">
+                    {grouped[letter].map((word) => (
             <div key={word.id} className="bg-surface border border-border rounded-lg p-4">
               {editing === word.id ? (
                 <div className="space-y-3">
@@ -210,9 +227,14 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
-          ))}
-        </div>
-      )}
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
