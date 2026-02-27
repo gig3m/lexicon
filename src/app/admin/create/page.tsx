@@ -22,7 +22,7 @@ export default function CreateWordPage() {
     content: string;
   } | null>(null);
   const [aiError, setAiError] = useState("");
-  const [activeTab, setActiveTab] = useState<"dictionary" | "ai">("dictionary");
+  const [aiSelected, setAiSelected] = useState(false);
 
   async function lookupWord(word?: string) {
     const searchWord = word || query;
@@ -36,7 +36,7 @@ export default function CreateWordPage() {
     setSelected({});
     setAiResult(null);
     setAiError("");
-    setActiveTab("dictionary");
+    setAiSelected(false);
 
     try {
       const [dictRes, aiRes] = await Promise.allSettled([
@@ -90,71 +90,67 @@ export default function CreateWordPage() {
   }
 
   const selectedCount = Object.values(selected).reduce((sum, s) => sum + s.size, 0);
+  const totalSelected = selectedCount + (aiSelected ? 1 : 0);
 
-  async function addSelected() {
+  async function saveWord() {
+    if (totalSelected === 0) return;
     setSaving(true);
     setError("");
 
     try {
+      // Build definition text from selections
+      const parts: string[] = [];
+      let partOfSpeech: string | null = null;
+      let pronunciation: string | null = null;
+
+      // Collect MW definitions
       for (const [entryIdxStr, defIndices] of Object.entries(selected)) {
         const entry = results[Number(entryIdxStr)];
+        if (!partOfSpeech) partOfSpeech = entry.partOfSpeech;
+        if (!pronunciation) pronunciation = entry.pronunciation || null;
         const defs = Array.from(defIndices)
           .sort((a, b) => a - b)
           .map((idx) => entry.definitions[idx]);
-        const definition =
-          defs.length === 1
-            ? defs[0]
-            : defs.map((d, i) => `${i + 1}. ${d}`).join("\n");
-
-        const res = await fetch("/api/words", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            word: entry.word,
-            definition,
-            part_of_speech: entry.partOfSpeech,
-            pronunciation: entry.pronunciation || null,
-            source: "merriam-webster",
-            notes: notes.trim() || null,
-          }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          setError(data.error || "Failed to save.");
-          setSaving(false);
-          return;
-        }
+        parts.push(...defs);
       }
 
-      setSaved(true);
-      setQuery("");
-      setResults([]);
-      setNotes("");
-      setSelected({});
-    } catch {
-      setError("Failed to save word.");
-    } finally {
-      setSaving(false);
-    }
-  }
+      // Collect AI definition
+      if (aiSelected && aiResult) {
+        if (!partOfSpeech) partOfSpeech = aiResult.part_of_speech || null;
+        if (!pronunciation) pronunciation = aiResult.pronunciation;
+        parts.push(aiResult.definition);
+      }
 
-  async function addAiWord() {
-    if (!aiResult) return;
-    setSaving(true);
-    setError("");
+      // Prefer AI pronunciation when available
+      if (aiResult?.pronunciation) {
+        pronunciation = aiResult.pronunciation;
+      }
 
-    try {
+      const definition =
+        parts.length === 1
+          ? parts[0]
+          : parts.map((d, i) => `${i + 1}. ${d}`).join("\n");
+
+      // Determine source
+      let source: string;
+      if (selectedCount > 0 && aiSelected) {
+        source = "combined";
+      } else if (aiSelected) {
+        source = "claude";
+      } else {
+        source = "merriam-webster";
+      }
+
       const res = await fetch("/api/words", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          word: aiResult.word,
-          definition: aiResult.definition,
-          part_of_speech: aiResult.part_of_speech || null,
-          pronunciation: aiResult.pronunciation || null,
-          source: "claude",
-          content: aiResult.content || null,
+          word: aiResult?.word || results[0]?.word || query,
+          definition,
+          part_of_speech: partOfSpeech,
+          pronunciation,
+          source,
+          content: aiResult?.content || null,
           notes: notes.trim() || null,
         }),
       });
@@ -169,6 +165,7 @@ export default function CreateWordPage() {
         setAiResult(null);
         setNotes("");
         setSelected({});
+        setAiSelected(false);
       }
     } catch {
       setError("Failed to save word.");
@@ -182,7 +179,7 @@ export default function CreateWordPage() {
       <div className="mb-8">
         <h1 className="font-serif text-3xl mb-2">Add a Word</h1>
         <p className="text-muted text-sm">
-          Search Merriam-Webster, pick a definition, and add it to your lexicon.
+          Look up a word, pick definitions from Merriam-Webster and AI, and add it to your lexicon.
         </p>
       </div>
 
@@ -267,38 +264,16 @@ export default function CreateWordPage() {
         </div>
       )}
 
-      {/* Tabs */}
+      {/* Results — unified checklist */}
       {(results.length > 0 || aiResult || aiError) && (
-        <div className="flex gap-1 mb-6 border-b border-border">
-          <button
-            onClick={() => setActiveTab("dictionary")}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              activeTab === "dictionary"
-                ? "border-accent text-accent"
-                : "border-transparent text-muted hover:text-ink"
-            }`}
-          >
-            Dictionary
-          </button>
-          <button
-            onClick={() => setActiveTab("ai")}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              activeTab === "ai"
-                ? "border-accent text-accent"
-                : "border-transparent text-muted hover:text-ink"
-            }`}
-          >
-            AI
-          </button>
-        </div>
-      )}
-
-      {activeTab === "dictionary" && (
-        <>
-          {/* Results */}
+        <div className="space-y-4">
+          {/* MW definitions */}
           {results.map((entry, i) => (
-            <div key={i} className="mb-6 bg-surface border border-border rounded-lg p-5">
-              <div className="flex items-baseline gap-3 mb-1">
+            <div key={`mw-${i}`} className="bg-surface border border-border rounded-lg p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/10 text-muted">
+                  MW
+                </span>
                 <h3 className="font-serif text-xl font-semibold">{entry.word}</h3>
                 <span className="text-xs italic text-muted">{entry.partOfSpeech}</span>
               </div>
@@ -327,44 +302,49 @@ export default function CreateWordPage() {
             </div>
           ))}
 
-          {selectedCount > 0 && (
-            <div className="sticky bottom-6 flex justify-center">
-              <button
-                onClick={addSelected}
-                disabled={saving}
-                className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-light transition-colors font-medium shadow-lg disabled:opacity-50"
-              >
-                {saving ? "Adding…" : `Add Selected (${selectedCount})`}
-              </button>
-            </div>
-          )}
-        </>
-      )}
-
-      {activeTab === "ai" && (
-        <div>
+          {/* AI definition */}
           {aiError && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {aiError}
             </div>
           )}
-          {!aiResult && !aiError && (
-            <p className="text-muted text-center py-12">Loading AI response…</p>
+          {!aiResult && !aiError && results.length > 0 && (
+            <div className="bg-surface border border-border rounded-lg p-5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent">
+                  AI
+                </span>
+                <p className="text-muted text-sm">Loading AI response…</p>
+              </div>
+            </div>
           )}
           {aiResult && (
             <div className="bg-surface border border-border rounded-lg p-5">
-              <div className="flex items-baseline gap-3 mb-1">
-                <h3 className="font-serif text-xl font-semibold">{aiResult.word}</h3>
-                {aiResult.part_of_speech && (
-                  <span className="text-xs italic text-muted">{aiResult.part_of_speech}</span>
-                )}
-              </div>
-              {aiResult.pronunciation && (
-                <p className="text-sm text-muted mb-3 font-mono">/{aiResult.pronunciation}/</p>
-              )}
-              <p className="text-ink/80 mb-4">{aiResult.definition}</p>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={aiSelected}
+                  onChange={() => setAiSelected((prev) => !prev)}
+                  className="mt-2 accent-accent"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent">
+                      AI
+                    </span>
+                    <h3 className="font-serif text-xl font-semibold">{aiResult.word}</h3>
+                    {aiResult.part_of_speech && (
+                      <span className="text-xs italic text-muted">{aiResult.part_of_speech}</span>
+                    )}
+                  </div>
+                  {aiResult.pronunciation && (
+                    <p className="text-sm text-muted mb-3 font-mono">/{aiResult.pronunciation}/</p>
+                  )}
+                  <p className="text-ink/80">{aiResult.definition}</p>
+                </div>
+              </label>
               {aiResult.content && (
-                <details className="mb-4">
+                <details className="mt-3 ml-9">
                   <summary className="text-sm text-muted cursor-pointer hover:text-ink transition-colors">
                     Show full content
                   </summary>
@@ -373,12 +353,25 @@ export default function CreateWordPage() {
                   </div>
                 </details>
               )}
+            </div>
+          )}
+
+          {/* AI content notice */}
+          {aiResult && (
+            <p className="text-xs text-muted text-center">
+              AI content (etymology, usage, related terms) is always included with saved words.
+            </p>
+          )}
+
+          {/* Save button */}
+          {totalSelected > 0 && (
+            <div className="sticky bottom-6 flex justify-center pt-4">
               <button
-                onClick={addAiWord}
+                onClick={saveWord}
                 disabled={saving}
-                className="px-5 py-2 bg-accent text-white rounded-lg hover:bg-accent-light transition-colors font-medium text-sm disabled:opacity-50"
+                className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-light transition-colors font-medium shadow-lg disabled:opacity-50"
               >
-                {saving ? "Adding…" : "Add to Lexicon"}
+                {saving ? "Adding…" : `Add to Lexicon (${totalSelected} selected)`}
               </button>
             </div>
           )}
