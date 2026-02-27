@@ -121,8 +121,8 @@ export default function CreateWordPage() {
         parts.push(aiResult.definition);
       }
 
-      // Prefer AI pronunciation when available
-      if (aiResult?.pronunciation) {
+      // Prefer AI pronunciation when AI is selected
+      if (aiSelected && aiResult?.pronunciation) {
         pronunciation = aiResult.pronunciation;
       }
 
@@ -145,7 +145,7 @@ export default function CreateWordPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          word: aiResult?.word || results[0]?.word || query,
+          word: (selectedCount > 0 ? results[Number(Object.keys(selected)[0])]?.word : null) || aiResult?.word || query,
           definition,
           part_of_speech: partOfSpeech,
           pronunciation,
@@ -325,7 +325,7 @@ export default function CreateWordPage() {
                   type="checkbox"
                   checked={aiSelected}
                   onChange={() => setAiSelected((prev) => !prev)}
-                  className="mt-2 accent-accent"
+                  className="mt-1 accent-accent"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
