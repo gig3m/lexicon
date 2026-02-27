@@ -8,7 +8,7 @@ interface AlphabetBarProps {
 
 export default function AlphabetBar({ activeLetters }: AlphabetBarProps) {
   return (
-    <nav className="sticky top-[57px] z-10 bg-parchment border-b border-border py-2 mb-6">
+    <nav className="sticky top-[58px] z-10 bg-parchment border-b border-border py-2 mb-6">
       <div className="flex justify-between">
         {LETTERS.map((letter) => {
           const active = activeLetters.has(letter);

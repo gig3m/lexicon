@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
-        <header className="border-b border-border bg-surface/80 backdrop-blur-sm sticky top-0 z-10">
+        <header className="border-b border-border bg-surface/80 backdrop-blur-sm sticky top-0 z-20">
           <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
             <a href="/" className="font-serif text-2xl tracking-tight text-ink hover:text-accent transition-colors">
               Lexicon
